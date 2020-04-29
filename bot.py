@@ -19,18 +19,21 @@ logging.basicConfig(filename="bot.log",  # настройка лога
 
 @bot.message_handler(func=lambda message: message.text != '')  # обработчик любого сообщения
 def handler(message):
-    logging.info("Got \"" + message.text + "\" from " + message.from_user.id)  # лог сообщения
+    logging.info("Got \"" + message.text + "\" from " + str(message.from_user.id))  # лог сообщения
     if not (message.from_user.id in config.FROM_TG):  # проверка на пользователя
         return
     try:  # try except на ошибки smtp: соединение, логин, отправка
+        bot.send_chat_action(chat_id=message.from_user.id, action='typing')
+
         s = smtplib.SMTP('smtp.gmail.com', 587)  # соединение с smtp сервером google
         s.starttls()  # запуск tls
         s.login(config.FROM_EMAIL, config.FROM_EMAIL_PASSWORD)  # логин с данными конфига
 
         msg = MIMEText(message.text, 'plain', 'utf-8')  # собираем тело письма - текст сообщения
-        msg['Subject'] = Header(message.from_user.id, 'utf-8')  # тема письма - id пользователя telegram
+        msg['Subject'] = Header(str(message.from_user.id), 'utf-8')  # тема письма - id пользователя telegram
 
         s.sendmail(config.FROM_EMAIL, config.TO_EMAIL, msg.as_string())  # отправка письма. Адресаты - согласно конфигу
+        bot.send_message(str(message.from_user.id), 'Сообщение отправлено.')
         s.quit()  # выход из сессии
     except SMTPException as err:  # обработка ошибки, лог
         logging.error(err)
